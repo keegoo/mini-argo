@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mini-argocd-controller
+  namespace: mini-argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mini-argocd-controller
+  template:
+    metadata:
+      labels:
+        app: mini-argocd-controller
+    spec:
+      serviceAccountName: mini-argocd-controller
+      imagePullSecrets:
+        # Create once:
+        #   kubectl -n mini-argocd create secret docker-registry ghcr-pull-secret \
+        #     --docker-server=ghcr.io --docker-username=<github-user> \
+        #     --docker-password=<PAT with read:packages scope>
+        # (not needed if the GHCR package is public)
+        - name: ghcr-pull-secret
+      containers:
+        - name: controller
+          # The tag is pinned by CI after every image push (immutable tag).
+          image: ghcr.io/keegoo/mini-argo:sha-0000000
+          imagePullPolicy: IfNotPresent

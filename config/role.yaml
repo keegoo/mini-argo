@@ -1,0 +1,9 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mini-argocd-controller
+rules:
+  # Watching HomeApp resources (needed from Phase 1 on).
+  - apiGroups: ["home.yang.dev"]
+    resources: ["homeapps"]
+    verbs: ["get", "list", "watch"]
