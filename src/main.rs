@@ -1,34 +1,27 @@
-//! Mini Argo CD controller.
-//!
-//! Phase 0: load Kubernetes configuration, connect to the API server,
-//! and keep running until terminated.
-
-use kube::{Client, Config};
-use tracing_subscriber::EnvFilter;
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
+    let _client = connect_to_kubernetes().await?;
 
-    tracing::info!("loading Kubernetes configuration");
-    let config = Config::infer().await?;
-
-    tracing::info!("connecting to Kubernetes API server");
-    let client = Client::try_from(config)?;
-    let version = client.apiserver_version().await?;
-
-    tracing::info!(
-        git_version = %version.git_version,
-        "connected to Kubernetes API server"
-    );
-
-    tracing::info!("controller is running");
+    println!("controller is running");
     tokio::signal::ctrl_c().await?;
-    tracing::info!("shutting down");
+    println!("shutting down");
 
     Ok(())
+}
+
+async fn connect_to_kubernetes() -> Result<kube::Client, Box<dyn std::error::Error>> {
+    println!("loading Kubernetes configuration");
+    let config = kube::Config::infer().await?;
+
+    println!("connecting to Kubernetes API server");
+    let client = kube::Client::try_from(config)?;
+
+    let version = client.apiserver_version().await?;
+
+    println!(
+        "connected to Kubernetes API server (git_version = {})",
+        version.git_version
+    );
+
+    Ok(client)
 }
