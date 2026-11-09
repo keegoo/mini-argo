@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[kube(
-    group = "miniargo.dev",
+    group = "miniargo.cy",
     version = "v1",
     kind = "Application",
     namespaced

@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: mini-argocd-controller
 rules:
-  # Watching HomeApp resources (needed from Phase 1 on).
-  - apiGroups: ["home.yang.dev"]
-    resources: ["homeapps"]
+  # Watching Application resources (needed from Phase 1 on).
+  - apiGroups: ["miniargo.cy"]
+    resources: ["applications"]
     verbs: ["get", "list", "watch"]

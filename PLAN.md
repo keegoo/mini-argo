@@ -265,7 +265,7 @@ mini-argocd-controller/
 │   └── error.rs
 │
 ├── crd/
-│   └── homeapp.yaml
+│   └── application.yaml
 │
 ├── config/
 │   ├── deployment.yaml
@@ -275,7 +275,7 @@ mini-argocd-controller/
 │   └── namespace.yaml
 │
 ├── examples/
-│   └── homeapp.yaml
+│   └── application.yaml
 │
 ├── tests/
 │
@@ -445,15 +445,15 @@ Running
 
 ---
 
-# 6. Phase 1 — HomeApp CRD
+# 6. Phase 1 — Application CRD
 
 这是整个项目的第一个 Kubernetes abstraction。
 
 定义：
 
 ```yaml
-apiVersion: home.yang.dev/v1alpha1
-kind: HomeApp
+apiVersion: miniargo.cy/v1
+kind: Application
 
 metadata:
   name: family-menu
@@ -472,12 +472,12 @@ spec:
 ```rust
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[kube(
-    group = "home.yang.dev",
-    version = "v1alpha1",
-    kind = "HomeApp",
+    group = "miniargo.cy",
+    version = "v1",
+    kind = "Application",
     namespaced
 )]
-pub struct HomeAppSpec {
+pub struct ApplicationSpec {
     pub image: String,
     pub replicas: i32,
 }
@@ -490,19 +490,19 @@ pub struct HomeAppSpec {
 项目应该能够生成：
 
 ```text
-crd/homeapp.yaml
+crd/application.yaml
 ```
 
 并将其安装到 Kubernetes。
 
 ---
 
-## 6.3 Watch HomeApp
+## 6.3 Watch Application
 
 使用 kube-rs runtime controller：
 
 ```text
-HomeApp
+Application
    ↓
 watch
    ↓
@@ -516,24 +516,24 @@ reconcile()
 执行：
 
 ```bash
-kubectl apply -f crd/homeapp.yaml
+kubectl apply -f crd/application.yaml
 ```
 
 然后：
 
 ```bash
-kubectl apply -f examples/homeapp.yaml
+kubectl apply -f examples/application.yaml
 ```
 
 Controller logs 能看到：
 
 ```text
-HomeApp detected
+Application detected
 ```
 
 ---
 
-# 7. Phase 2 — Reconcile HomeApp → Deployment
+# 7. Phase 2 — Reconcile Application → Deployment
 
 这是整个项目最重要的 Phase。
 
@@ -578,9 +578,9 @@ spec:
 实现：
 
 ```text
-reconcile(HomeApp)
+reconcile(Application)
         |
-        +-- Get HomeApp
+        +-- Get Application
         |
         +-- Calculate desired Deployment
         |
@@ -632,7 +632,7 @@ kube-rs
 Deployment 应该拥有：
 
 ```text
-HomeApp
+Application
 ```
 
 作为 Owner。
@@ -640,7 +640,7 @@ HomeApp
 关系：
 
 ```text
-HomeApp
+Application
    │
    │ ownerReference
    ▼
@@ -650,7 +650,7 @@ Deployment
 这样删除：
 
 ```bash
-kubectl delete homeapp family-menu
+kubectl delete application family-menu
 ```
 
 之后 Kubernetes 可以自动 garbage collect Deployment。
@@ -660,7 +660,7 @@ kubectl delete homeapp family-menu
 ## Definition of Done
 
 ```text
-Create HomeApp
+Create Application
       ↓
 Deployment automatically created
 ```
@@ -685,10 +685,10 @@ image: ...:sha-def456
 
 Deployment 自动更新。
 
-删除 HomeApp：
+删除 Application：
 
 ```text
-HomeApp deleted
+Application deleted
       ↓
 Deployment deleted
 ```
@@ -697,7 +697,7 @@ Deployment deleted
 
 # 8. Phase 3 — Status
 
-HomeApp 不应该只有：
+Application 不应该只有：
 
 ```text
 spec
@@ -736,7 +736,7 @@ Degraded
 ## Status flow
 
 ```text
-HomeApp created
+Application created
       ↓
 Pending
       ↓
@@ -758,7 +758,7 @@ Running
 执行：
 
 ```bash
-kubectl get homeapp family-menu -o yaml
+kubectl get application family-menu -o yaml
 ```
 
 能够看到：
@@ -783,7 +783,7 @@ status:
 正常状态：
 
 ```text
-HomeApp replicas = 2
+Application replicas = 2
 Deployment replicas = 2
 ```
 
@@ -845,13 +845,13 @@ Controller 不应该自己重新实现 Kubernetes Deployment controller。
 它只需要正确维护：
 
 ```text
-HomeApp → Deployment
+Application → Deployment
 ```
 
 并根据 Deployment 状态更新：
 
 ```text
-HomeApp.status
+Application.status
 ```
 
 ---
@@ -875,8 +875,8 @@ apps/family-menu.yaml
 内容：
 
 ```yaml
-apiVersion: home.yang.dev/v1alpha1
-kind: HomeApp
+apiVersion: miniargo.cy/v1
+kind: Application
 
 metadata:
   name: family-menu
@@ -910,7 +910,7 @@ GitOps repository
 read apps/*.yaml
         |
         ▼
-desired HomeApp
+desired Application
         |
         ▼
 Kubernetes
@@ -998,7 +998,7 @@ read-only
 
 ---
 
-# 13. Phase 7 — GitOps → HomeApp
+# 13. Phase 7 — GitOps → Application
 
 Controller 每次 polling：
 
@@ -1007,9 +1007,9 @@ GitOps repo
      ↓
 read YAML
      ↓
-parse HomeApp
+parse Application
      ↓
-Get current HomeApp
+Get current Application
      ↓
 Create / Update
 ```
@@ -1021,9 +1021,9 @@ Git commit
     ↓
 Git polling
     ↓
-HomeApp update
+Application update
     ↓
-HomeApp reconciliation
+Application reconciliation
     ↓
 Deployment update
     ↓
@@ -1187,7 +1187,7 @@ Service
 关系：
 
 ```text
-HomeApp
+Application
  ├── Deployment
  └── Service
 ```
@@ -1229,7 +1229,7 @@ GitOps repo
        ↓
 Rust Controller
        ↓
-HomeApp
+Application
        ↓
 Deployment
        ↓
@@ -1267,10 +1267,10 @@ delete
 至少涉及：
 
 ```text
-HomeApp
+Application
 Deployments
 Services
-HomeApp status
+Application status
 ```
 
 不要直接：
@@ -1310,7 +1310,7 @@ drop unnecessary Linux capabilities
 重点测试：
 
 ```text
-HomeApp → desired Deployment
+Application → desired Deployment
 ```
 
 例如：
@@ -1354,7 +1354,7 @@ Git YAML
    ↓
 parse
    ↓
-HomeApp desired state
+Application desired state
 ```
 
 ---
@@ -1369,7 +1369,7 @@ Git commit
 → GHCR
 → GitOps commit
 → Controller
-→ HomeApp
+→ Application
 → Deployment
 → Pod
 ```
@@ -1389,7 +1389,7 @@ tracing
 日志至少包含：
 
 ```text
-HomeApp name
+Application name
 namespace
 reconciliation result
 Git commit/version
@@ -1401,7 +1401,7 @@ retry
 例如：
 
 ```text
-INFO reconciled HomeApp
+INFO reconciled Application
     namespace=family-menu
     name=family-menu
     image=ghcr.io/yang/family-menu:sha-abc123
@@ -1510,7 +1510,7 @@ GitHub Actions
           │
           │ reconcile
           ▼
-       HomeApp
+       Application
           │
           ▼
       Deployment
